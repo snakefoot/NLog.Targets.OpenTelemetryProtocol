@@ -24,10 +24,6 @@ namespace NLog.Targets
         private static readonly string EmptyTraceIdToHexString = default(System.Diagnostics.ActivityTraceId).ToHexString();
         private static readonly string EmptySpanIdToHexString = default(System.Diagnostics.ActivitySpanId).ToHexString();
 
-        private static readonly Layout DefaultBodyLayout = "${message}";
-
-        private bool _renderMessage = false;
-
         private LoggerProvider _loggerProvider;
 
         private BatchLogRecordExportProcessor _processor;
@@ -92,15 +88,13 @@ namespace NLog.Targets
 
         public OtlpTarget()
         {
-            Layout = DefaultBodyLayout;
+            Layout = "${message}";
             IncludeEventProperties = true;
             OnlyIncludeProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);           
         }
 
         protected override void InitializeTarget()
         {
-            _renderMessage = !Layout.ToString().Equals(DefaultBodyLayout.ToString());
-
             _messageTemplateString = RenderLogEvent(MessageTemplateAttribute, LogEventInfo.CreateNullEvent(), DefaultMessageTemplateAttribute);
 
             var internalLoggerLevel = ResolveInternalLoggerLevel();
@@ -315,16 +309,8 @@ namespace NLog.Targets
 
             if (IncludeFormattedMessage && (logEvent.Parameters?.Length > 0 || logEvent.HasProperties))
             {
-                if (_renderMessage)
-                {
-                    var formattedMessage = RenderLogEvent(Layout, logEvent);
-                    data.Body = formattedMessage;
-                }
-                else
-                {
-                    data.Body = logEvent.FormattedMessage;
-                }
-
+                var formattedMessage = RenderLogEvent(Layout, logEvent);
+                data.Body = formattedMessage;
                 attributes.Add(_messageTemplateString, logEvent.Message ?? string.Empty);
             }
             else
